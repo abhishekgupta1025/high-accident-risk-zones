@@ -1,13 +1,21 @@
 # 🚦 High-Accident Risk Zone Identification via Network-Constrained DBSCAN
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![GeoPandas](https://img.shields.io/badge/GeoPandas-0.14%2B-139C5A?style=flat-square)](https://geopandas.org/)
-[![Shapely](https://img.shields.io/badge/Shapely-2.0%2B-FF6F00?style=flat-square)](https://shapely.readthedocs.io/)
-[![Folium](https://img.shields.io/badge/Folium-Leaflet_GIS-77B800?style=flat-square&logo=leaflet&logoColor=white)](https://python-visualization.github.io/folium/)
-[![Projection](https://img.shields.io/badge/CRS-EPSG%3A32645%20(UTM%2045N)-blue?style=flat-square)](https://epsg.io/32645)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abhishekgupta1025/high-accident-risk-zones/main/segment_constrained_clustering_results_v3_cat_colors/static_cluster_map_seg_intol0_eps150.0_mp5.png" alt="Accident Clusters and Road Network" width="850"/>
+</p>
 
-A high-performance geospatial spatial clustering and risk analysis engine designed to identify traffic accident blackspots constrained by physical road network topology, eliminating Euclidean cross-highway false clusters.
+<p align="center">
+  <b>Topological Spatial Clustering of 130+ Traffic Accident Blackspots across Road Network Corridors</b>
+</p>
+
+<p align="center">
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/></a>
+  <a href="https://geopandas.org/"><img src="https://img.shields.io/badge/GeoPandas-0.14%2B-139C5A?style=for-the-badge" alt="GeoPandas"/></a>
+  <a href="https://shapely.readthedocs.io/"><img src="https://img.shields.io/badge/Shapely-2.0%2B-FF6F00?style=for-the-badge" alt="Shapely"/></a>
+  <a href="https://python-visualization.github.io/folium/"><img src="https://img.shields.io/badge/Folium-Interactive_GIS-77B800?style=for-the-badge&logo=leaflet&logoColor=white" alt="Folium"/></a>
+  <a href="https://epsg.io/32645"><img src="https://img.shields.io/badge/CRS-EPSG%3A32645%20(UTM%2045N)-blue?style=for-the-badge" alt="UTM 45N"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License"/></a>
+</p>
 
 ---
 
@@ -103,7 +111,21 @@ Evaluated on the regional road network ($\epsilon = 150.0\text{ m}, \text{MinPts
 
 ---
 
-## 📁 5. Repository Structure
+## 🗺️ 5. Interactive Cartographic Visual Deliverables
+
+The engine exports an interactive **Folium / Leaflet GIS Web Application** (`cluster_map_seg_intol0_eps150.0_mp5.html`):
+
+| Map Layer | Description | Visual Element |
+| :--- | :--- | :--- |
+| **Road Network** | Topological road centerline linestrings | Gray vector overlay with dynamic tooltips |
+| **Cluster Points** | Grouped accident locations | Categorically colored circle markers by cluster ID |
+| **Centroids** | Weighted geometric center of each danger zone | Blue interactive marker icons with size info |
+| **Convex Hulls** | Spatial polygons bounding each danger zone | Semi-transparent polygons with calculated area ($m^2$) |
+| **Accident Heatmap** | Continuous kernel density estimation (KDE) | Multi-gradient density heat surface |
+
+---
+
+## 📁 6. Repository Structure
 
 ```
 ├── maincode.py                              # 🌟 Production Topological DBSCAN Engine
@@ -125,7 +147,7 @@ Evaluated on the regional road network ($\epsilon = 150.0\text{ m}, \text{MinPts
 
 ---
 
-## 🚀 6. Installation & Quick Start
+## 🚀 7. Installation & Quick Start
 
 ### Prerequisites
 * Python 3.9+
@@ -156,7 +178,7 @@ open segment_constrained_clustering_results_v3_cat_colors/cluster_map_seg_intol0
 
 ---
 
-## ⚙️ 7. Configuration Parameters
+## ⚙️ 8. Configuration Parameters
 
 In [`maincode.py`](maincode.py):
 
@@ -173,7 +195,7 @@ INTERSECTION_BUFFER_TOLERANCE = 0
 
 ---
 
-## 📜 8. License & Author
+## 📜 9. License & Author
 
 * **Author:** [Abhishek Gupta](https://github.com/abhishekgupta1025)
 * **License:** MIT License
