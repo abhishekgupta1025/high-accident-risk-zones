@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "risk-zones"
+version = "2.0.0"
+description = "High-Accident Risk Zone Identification via Network-Constrained DBSCAN"
+readme = "README.md"
+authors = [{ name = "Abhishek Gupta" }]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "geopandas>=0.14.0",
+    "shapely>=2.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "folium>=0.15.0",
+    "branca>=0.7.0",
+    "jinja2>=3.1.0",
+    "tqdm>=4.66.0",
+    "pyproj>=3.6.0",
+    "rtree>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+risk-zones = "run_pipeline:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
