@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <b>Topological Spatial Clustering of 130+ Traffic Accident Blackspots across Road Network Corridors</b>
+  <b>Production-Grade Geospatial Clustering Engine: Identifying 130+ Traffic Accident Blackspots across Road Network Corridors</b>
 </p>
 
 <p align="center">
@@ -113,7 +113,7 @@ Evaluated on the regional road network ($\epsilon = 150.0\text{ m}, \text{MinPts
 
 ## 🗺️ 5. Interactive Cartographic Visual Deliverables
 
-The engine exports an interactive **Folium / Leaflet GIS Web Application** (`cluster_map_seg_intol0_eps150.0_mp5.html`):
+The engine exports an interactive **Folium / Leaflet GIS Web Application** (`cluster_map_eps150.0_mp5.html`):
 
 | Map Layer | Description | Visual Element |
 | :--- | :--- | :--- |
@@ -125,23 +125,52 @@ The engine exports an interactive **Folium / Leaflet GIS Web Application** (`clu
 
 ---
 
-## 📁 6. Repository Structure
+## 📁 6. Modular Package Architecture
+
+The codebase is organized into decoupled domain modules following SOLID and Clean Architecture principles:
 
 ```
-├── maincode.py                              # 🌟 Production Topological DBSCAN Engine
-├── CRSchnager.py                            # Metric CRS Reprojector (WGS84 -> UTM Zone 45N)
+high-accident-risk-zones/
 │
-├── Selected_Road_Features.*                 # Road Network Shapefiles (Linestrings)
-├── Accident_Data_Mapped_Roads.*             # Raw Accident Incident Shapefiles
-├── Accidents_Projected_Meters.*             # Projected UTM 45N Incident Shapefiles
+├── data/                                    # 📊 Spatial GIS Datasets
+│   ├── raw_csv/                             # Tabular accident & transit records
+│   ├── shapefiles_wgs84/                    # Raw WGS84 Geographic Shapefiles (EPSG:4326)
+│   └── shapefiles_projected_utm/            # UTM Zone 45N Metric Shapefiles (EPSG:32645)
 │
-├── segment_constrained_clustering_results_v3_cat_colors/  # 🗺️ Output Artifacts
-│   ├── cluster_map_seg_intol0_eps150.0_mp5.html          # Interactive Leaflet / Folium Map
-│   ├── cluster_summary_seg_intol0_eps150.0_mp5.csv       # 130+ Hotspot Statistical Summary
-│   ├── points_associated_seg_intol0_eps150.0_mp5.gpkg    # Clustered Points Layer (GIS)
-│   ├── roads_projected_seg_intol0_eps150.0_mp5.gpkg      # Road Network Layer (GIS)
-│   └── static_cluster_map_seg_intol0_eps150.0_mp5.png    # Publication-Ready Static Map
+├── results/                                 # 🗺️ Analysis Outputs & Deliverables
+│   ├── interactive_maps/                    # Leaflet / Folium HTML web maps
+│   ├── static_plots/                        # High-resolution PNG figures
+│   ├── spatial_layers/                      # Output GeoPackages (.gpkg)
+│   └── reports/                             # CSV summary metrics & hotspot stats
 │
+├── src/                                     # 🐍 Core Python Source Package
+│   └── risk_zones/                          # Modular 'risk_zones' Package
+│       ├── __init__.py                      # Package exports & public API
+│       ├── config.py                        # Pipeline configuration dataclass
+│       ├── io/                              # Data loading, validation & CRS transformation
+│       │   ├── loader.py                    # Vector loading & geometry repair
+│       │   └── reprojector.py               # Coordinate reprojection (WGS84 -> UTM 45N)
+│       ├── topology/                        # Road Graph & Spatial Indexing
+│       │   ├── dsu.py                       # Disjoint Set Union road grouping
+│       │   ├── spatial_index.py             # GEOS R-Tree spatial indexing wrapper
+│       │   └── graph.py                     # 3-Tier Topological Connectivity Cascade
+│       ├── clustering/                      # Clustering Algorithms
+│       │   ├── dbscan.py                    # Network-Constrained DBSCAN engine
+│       │   └── metrics.py                   # Centroids, convex hulls, cluster areas
+│       └── visualization/                   # Cartographic & Visualization Engines
+│           ├── scale_control.py             # Leaflet custom MacroElement scale bar
+│           ├── web_map.py                   # Folium interactive map builder
+│           └── static_plot.py               # Matplotlib publication figures
+│
+├── tests/                                   # 🧪 Automated Test Suite (12+ Unit Tests)
+│   ├── test_dsu.py                          # Tests for Union-Find path compression & rank
+│   ├── test_topology.py                     # Tests for 3-tier connectivity logic
+│   ├── test_dbscan.py                       # Tests for metric DBSCAN clustering
+│   └── test_metrics.py                      # Tests for centroids & convex hull calculations
+│
+├── run_pipeline.py                          # 🚀 Unified CLI Runner & Entrypoint
+├── pyproject.toml                           # 📦 Python packaging definition
+├── requirements.txt                         # ⚙️ Pinned environment dependencies
 └── README.md                                # 📖 Documentation
 ```
 
@@ -149,49 +178,52 @@ The engine exports an interactive **Folium / Leaflet GIS Web Application** (`clu
 
 ## 🚀 7. Installation & Quick Start
 
-### Prerequisites
-* Python 3.9+
-* Required Libraries:
-  ```bash
-  pip install geopandas shapely numpy pandas matplotlib folium branca jinja2 tqdm
-  ```
-
-### Step 1: Reproject Geographic Data to Metric CRS
+### 1. Install Dependencies
 ```bash
-python CRSchnager.py
+pip install -r requirements.txt
+
+# Or install package in editable mode:
+pip install -e .
 ```
 
-### Step 2: Execute Network-Constrained Clustering
+### 2. Run the Automated Test Suite
 ```bash
-python maincode.py
+python -m unittest discover tests
 ```
 
-### Step 3: View Results & Interactive Map
+### 3. Execute the Hotspot Analysis Pipeline
+```bash
+# Run with default optimal parameters (eps=150m, MinPts=5)
+python run_pipeline.py
+
+# Or customize clustering parameters via CLI flags:
+python run_pipeline.py --eps 120 --min-pts 4 --tolerance 5.0
+```
+
+### 4. View Results & Interactive Map
 Open the interactive Leaflet map in your browser:
 ```bash
 # Linux
-google-chrome segment_constrained_clustering_results_v3_cat_colors/cluster_map_seg_intol0_eps150.0_mp5.html
+google-chrome results/interactive_maps/cluster_map_eps150.0_mp5.html
 
 # macOS
-open segment_constrained_clustering_results_v3_cat_colors/cluster_map_seg_intol0_eps150.0_mp5.html
+open results/interactive_maps/cluster_map_eps150.0_mp5.html
 ```
 
 ---
 
-## ⚙️ 8. Configuration Parameters
+## ⚙️ 8. CLI Configuration Parameters
 
-In [`maincode.py`](maincode.py):
-
-```python
-# Spatial distance threshold in meters (UTM Zone 45N)
-EPS = 150.0
-
-# Minimum incident points required to form a dense core cluster
-MIN_PTS = 5
-
-# Geometric buffer tolerance to bridge GIS digitization micro-gaps (meters)
-INTERSECTION_BUFFER_TOLERANCE = 0
-```
+| Argument | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--eps` | `float` | `150.0` | Spatial distance search radius in meters (UTM Zone 45N). |
+| `--min-pts` | `int` | `5` | Minimum incident points required to form a dense core cluster. |
+| `--tolerance` | `float` | `0.0` | Geometric buffer tolerance to bridge GIS digitization micro-gaps (meters). |
+| `--road-shp` | `str` | `None` | Custom path to road network shapefile. |
+| `--accident-shp` | `str` | `None` | Custom path to accident incident shapefile. |
+| `--output-dir` | `str` | `results/` | Destination folder for reports, GIS layers, and maps. |
+| `--no-interactive-map`| `flag` | `False` | Disables Folium HTML generation. |
+| `--no-static-map` | `flag` | `False` | Disables Matplotlib PNG generation. |
 
 ---
 
