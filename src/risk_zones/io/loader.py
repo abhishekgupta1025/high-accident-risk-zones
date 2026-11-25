@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Tuple, Union
 import geopandas as gpd
 import pandas as pd
+from shapely import make_valid
 
 
 def load_point_data(filepath: Union[str, Path]) -> Optional[gpd.GeoDataFrame]:
@@ -91,11 +92,16 @@ def load_road_data(filepath: Union[str, Path]) -> Tuple[Optional[gpd.GeoDataFram
         gdf_lines = gdf_lines.reset_index(drop=True)
         gdf_lines["road_uid"] = gdf_lines.index
 
-        # Attempt to repair invalid geometries using buffer(0) if present
+        # Repair invalid line geometries without converting them to polygons
         invalid_mask = ~gdf_lines.geometry.is_valid
         if invalid_mask.any():
-            print(f"[Warning] Found {invalid_mask.sum()} invalid road geometries. Attempting buffer(0) repair...")
-            gdf_lines.geometry = gdf_lines.geometry.buffer(0)
+            print(f"[Warning] Found {invalid_mask.sum()} invalid road geometries. Repairing with make_valid()...")
+            repaired = make_valid(gdf_lines.geometry[invalid_mask])
+            gdf_lines.loc[invalid_mask, "geometry"] = repaired
+            gdf_lines = gdf_lines[
+                gdf_lines.geometry.notna() & ~gdf_lines.geometry.is_empty
+            ].reset_index(drop=True)
+            gdf_lines["road_uid"] = gdf_lines.index
 
         if gdf_lines.crs is None:
             raise ValueError(f"Road dataset '{path.name}' is missing CRS metadata.")

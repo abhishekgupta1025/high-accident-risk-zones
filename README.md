@@ -1,7 +1,7 @@
 # 🚦 High-Accident Risk Zone Identification via Network-Constrained DBSCAN
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abhishekgupta1025/high-accident-risk-zones/main/segment_constrained_clustering_results_v3_cat_colors/static_cluster_map_seg_intol0_eps150.0_mp5.png" alt="Accident Clusters and Road Network" width="850"/>
+  <img src="https://raw.githubusercontent.com/abhishekgupta1025/high-accident-risk-zones/main/results/segment_constrained_clustering_results_v3_cat_colors/static_cluster_map_seg_intol0_eps150.0_mp5.png" alt="Accident Clusters and Road Network" width="850"/>
 </p>
 
 <p align="center">
@@ -88,7 +88,7 @@ def find_set(item):
 * Pairwise road collision checks are pre-computed using GEOS R-Tree spatial indexing (`road_gdf.sindex.query(predicate='intersects')`).
 * Reduces topological intersection checks from $\mathcal{O}(M^2)$ to $\mathcal{O}(M \log M)$, where $M$ is the number of road segments.
 
-### Metric Reprojection (`CRSchnager.py`)
+### Metric Reprojection (`src/risk_zones/io/reprojector.py`)
 * Transforms raw coordinates from angular WGS84 degrees (`EPSG:4326`) to Universal Transverse Mercator Zone 45N (`EPSG:32645`), ensuring all $\epsilon$ distance buffers and convex hull areas are true-to-scale in meters.
 
 ---
@@ -146,13 +146,14 @@ high-accident-risk-zones/
 ├── src/                                     # 🐍 Core Python Source Package
 │   └── risk_zones/                          # Modular 'risk_zones' Package
 │       ├── __init__.py                      # Package exports & public API
+│       ├── cli.py                           # Unified CLI entrypoint (`risk-zones`)
 │       ├── config.py                        # Pipeline configuration dataclass
 │       ├── io/                              # Data loading, validation & CRS transformation
 │       │   ├── loader.py                    # Vector loading & geometry repair
 │       │   └── reprojector.py               # Coordinate reprojection (WGS84 -> UTM 45N)
 │       ├── topology/                        # Road Graph & Spatial Indexing
 │       │   ├── dsu.py                       # Disjoint Set Union road grouping
-│       │   ├── spatial_index.py             # GEOS R-Tree spatial indexing wrapper
+│       │   ├── spatial_index.py             # R-Tree road snapping & intersection queries
 │       │   └── graph.py                     # 3-Tier Topological Connectivity Cascade
 │       ├── clustering/                      # Clustering Algorithms
 │       │   ├── dbscan.py                    # Network-Constrained DBSCAN engine
@@ -218,7 +219,9 @@ open results/interactive_maps/cluster_map_eps150.0_mp5.html
 | :--- | :--- | :--- | :--- |
 | `--eps` | `float` | `150.0` | Spatial distance search radius in meters (UTM Zone 45N). |
 | `--min-pts` | `int` | `5` | Minimum incident points required to form a dense core cluster. |
-| `--tolerance` | `float` | `0.0` | Geometric buffer tolerance to bridge GIS digitization micro-gaps (meters). |
+| `--tolerance` | `float` | `0.0` | Geometric tolerance to bridge GIS digitization micro-gaps (meters). |
+| `--group-threshold` | `float` | `0.0` | DSU corridor grouping threshold in meters (`0.0` uses individual segments). |
+| `--max-snap-distance` | `float` | `None` | Max distance in meters to snap incidents to nearest road (`None` = unlimited). |
 | `--road-shp` | `str` | `None` | Custom path to road network shapefile. |
 | `--accident-shp` | `str` | `None` | Custom path to accident incident shapefile. |
 | `--output-dir` | `str` | `results/` | Destination folder for reports, GIS layers, and maps. |

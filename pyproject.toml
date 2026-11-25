@@ -30,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-risk-zones = "run_pipeline:main"
+risk-zones = "risk_zones.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

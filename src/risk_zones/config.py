@@ -15,6 +15,8 @@ class PipelineConfig:
     eps: float = 150.0  # Search radius in meters (UTM Zone 45N)
     min_pts: int = 5  # Minimum incidents to form a dense core cluster
     intersection_tolerance: float = 0.0  # Buffer distance (meters) to bridge digitization gaps
+    group_threshold: float = 0.0  # DSU corridor grouping distance (meters); 0.0 uses individual segments
+    max_snap_distance: Optional[float] = None  # Max distance (meters) to snap incidents to roads; None = unlimited
 
     # Coordinate Reference Systems
     wgs84_crs: str = "EPSG:4326"
@@ -35,6 +37,13 @@ class PipelineConfig:
     generate_heatmap: bool = True
 
     def __post_init__(self):
+        if self.intersection_tolerance < 0:
+            raise ValueError(f"intersection_tolerance must be >= 0, got {self.intersection_tolerance}")
+        if self.group_threshold < 0:
+            raise ValueError(f"group_threshold must be >= 0, got {self.group_threshold}")
+        if self.max_snap_distance is not None and self.max_snap_distance <= 0:
+            raise ValueError(f"max_snap_distance must be > 0 or None, got {self.max_snap_distance}")
+
         if self.data_dir is None:
             self.data_dir = self.base_dir / "data"
         if self.results_dir is None:

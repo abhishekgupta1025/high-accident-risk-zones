@@ -11,7 +11,11 @@ from .topology.graph import RoadConnectivityGraph
 try:
     from .io.loader import load_point_data, load_road_data
     from .io.reprojector import reproject_geodataframe, ensure_projected_crs
-    from .topology.spatial_index import precompute_segment_intersections, precompute_group_intersections
+    from .topology.spatial_index import (
+        snap_points_to_roads,
+        precompute_segment_intersections,
+        precompute_group_intersections,
+    )
     from .clustering.dbscan import NetworkConstrainedDBSCAN, calculate_euclidean_distance
     from .clustering.metrics import ClusterMetricsCalculator
     from .visualization.web_map import InteractiveMapBuilder

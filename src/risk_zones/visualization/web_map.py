@@ -8,7 +8,7 @@ from typing import Dict, Optional, Union
 import folium
 from folium.plugins import HeatMap
 import geopandas as gpd
-import matplotlib.cm as cm
+import matplotlib
 import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
@@ -82,7 +82,7 @@ class InteractiveMapBuilder:
         unique_labels = sorted(points_proj[cluster_col].unique())
         cluster_ids = [l for l in unique_labels if l != -1 and pd.notna(l)]
 
-        cmap = cm.get_cmap("tab20", max(len(cluster_ids), 1))
+        cmap = matplotlib.colormaps["tab20"]
         color_map: Dict[int, str] = {}
         for idx, cid in enumerate(cluster_ids):
             color_map[int(cid)] = mcolors.rgb2hex(cmap(idx % 20))

@@ -15,7 +15,7 @@ class DisjointSetUnion:
     def __init__(self, elements=None):
         self.parent: Dict[Hashable, Hashable] = {}
         self.rank: Dict[Hashable, int] = {}
-        if elements:
+        if elements is not None:
             for elem in elements:
                 self.make_set(elem)
 

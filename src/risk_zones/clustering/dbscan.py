@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Network-Constrained Density-Based Spatial Clustering of Applications with Noise (DBSCAN).
-Combines metric distance constraints with the 3-Tier Topological Connectivity Cascade.
+Combines R-Tree spatial indexing, metric distance constraints, and the 3-Tier Topological Connectivity Cascade.
 """
 import math
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union
 from tqdm import tqdm
 
 from ..topology.graph import RoadConnectivityGraph
@@ -49,33 +49,28 @@ class NetworkConstrainedDBSCAN:
     def find_neighbors(
         self,
         target_idx: int,
-        points_coords: List[Tuple[float, float]],
-        road_ids: List[Optional[Union[int, str]]],
+        points_coords: Sequence[Tuple[float, float]],
+        road_ids: Sequence[Optional[Union[int, str]]],
+        candidate_indices: Optional[Iterable[int]] = None,
     ) -> List[int]:
         """
-        Finds all points that satisfy both:
-        1. Spatial constraint: Euclidean distance <= eps
-        2. Network constraint: 3-Tier topological connectivity along road network
+        Finds all points satisfying both Euclidean distance <= eps and network connectivity.
+        Uses R-Tree precomputed `candidate_indices` when supplied for O(log N) query cost.
         """
-        neighbors = []
+        neighbors: List[int] = []
         target_coord = points_coords[target_idx]
         target_road_id = road_ids[target_idx]
+        candidates = candidate_indices if candidate_indices is not None else range(len(points_coords))
 
-        for i, neighbor_coord in enumerate(points_coords):
+        for i in candidates:
             if i == target_idx:
                 continue
 
-            # 1. Metric Distance Constraint Check
-            distance = calculate_euclidean_distance(target_coord, neighbor_coord)
-            if distance <= self.eps:
-                # 2. Network Topology Constraint Check
-                if self.connectivity_graph is None:
-                    # Unconstrained fallback
+            if calculate_euclidean_distance(target_coord, points_coords[i]) <= self.eps:
+                if self.connectivity_graph is None or self.connectivity_graph.are_connected(
+                    target_road_id, road_ids[i]
+                ):
                     neighbors.append(i)
-                else:
-                    neighbor_road_id = road_ids[i]
-                    if self.connectivity_graph.are_connected(target_road_id, neighbor_road_id):
-                        neighbors.append(i)
 
         return neighbors
 
@@ -84,9 +79,10 @@ class NetworkConstrainedDBSCAN:
         core_idx: int,
         neighbors_indices: List[int],
         cluster_label: int,
-        points_coords: List[Tuple[float, float]],
-        road_ids: List[Optional[Union[int, str]]],
+        points_coords: Sequence[Tuple[float, float]],
+        road_ids: Sequence[Optional[Union[int, str]]],
         labels: List[int],
+        spatial_candidates: Optional[Sequence[List[int]]] = None,
     ) -> None:
         """Expands the cluster from a core point using Breadth-First Search (BFS) queue."""
         labels[core_idx] = cluster_label
@@ -99,14 +95,16 @@ class NetworkConstrainedDBSCAN:
             curr_neighbor = queue[queue_idx]
             queue_idx += 1
 
-            if labels[curr_neighbor] in [-1, 0]:
-                # Noise point becomes border point, or unassigned gets added
+            if labels[curr_neighbor] in (-1, 0):
                 labels[curr_neighbor] = cluster_label
 
-                # Query neighbors of this point to check if it is also a core point
-                new_neighbors = self.find_neighbors(curr_neighbor, points_coords, road_ids)
+                candidates = (
+                    spatial_candidates[curr_neighbor] if spatial_candidates is not None else None
+                )
+                new_neighbors = self.find_neighbors(
+                    curr_neighbor, points_coords, road_ids, candidate_indices=candidates
+                )
 
-                # Core point check: requires min_pts points (itself + neighbors >= min_pts)
                 if len(new_neighbors) >= (self.min_pts - 1):
                     for n_idx in new_neighbors:
                         if n_idx not in processed_or_queued:
@@ -131,11 +129,26 @@ class NetworkConstrainedDBSCAN:
         if points_gdf is None or len(points_gdf) == 0:
             raise ValueError("Input points dataset is empty or None.")
 
-        # Extract coordinates
         points_coords = list(zip(points_gdf.geometry.x, points_gdf.geometry.y))
-        road_ids = points_gdf[road_id_column].tolist() if road_id_column in points_gdf.columns else [None] * len(points_gdf)
+        road_ids = (
+            points_gdf[road_id_column].tolist()
+            if road_id_column in points_gdf.columns
+            else [None] * len(points_gdf)
+        )
 
         n_points = len(points_coords)
+        spatial_candidates: Optional[List[List[int]]] = None
+        if hasattr(points_gdf, "sindex"):
+            spatial_candidates = [[] for _ in range(n_points)]
+            left_idx, right_idx = points_gdf.sindex.query(
+                points_gdf.geometry,
+                predicate="dwithin",
+                distance=self.eps,
+            )
+            for i, j in zip(left_idx, right_idx):
+                if i != j:
+                    spatial_candidates[int(i)].append(int(j))
+
         labels = [0] * n_points  # 0: Unclassified, -1: Noise, >0: Cluster ID
         cluster_id = 0
 
@@ -144,15 +157,24 @@ class NetworkConstrainedDBSCAN:
             if labels[i] != 0:
                 continue
 
-            neighbors = self.find_neighbors(i, points_coords, road_ids)
+            candidates = spatial_candidates[i] if spatial_candidates is not None else None
+            neighbors = self.find_neighbors(
+                i, points_coords, road_ids, candidate_indices=candidates
+            )
 
             if len(neighbors) < (self.min_pts - 1):
-                # Not a core point -> mark tentatively as Noise
                 labels[i] = -1
             else:
-                # Core point -> start new cluster
                 cluster_id += 1
-                self.expand_cluster(i, neighbors, cluster_id, points_coords, road_ids, labels)
+                self.expand_cluster(
+                    i,
+                    neighbors,
+                    cluster_id,
+                    points_coords,
+                    road_ids,
+                    labels,
+                    spatial_candidates=spatial_candidates,
+                )
 
         self.labels_ = labels
         num_clusters = len(set(labels) - {-1, 0})
